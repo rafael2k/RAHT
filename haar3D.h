@@ -2,7 +2,6 @@
 #define HAAR3D_H
 
 #include <stdint.h>
-#include "mex.h"
 #include <algorithm>
 #include <math.h>
 
@@ -18,4 +17,4 @@ void copyAsort(double *VX, double *CX, size_t N, double *C, uint64_t *W, uint64_
 void haar3D(int64_t Qstep, double *inV, double *inC, size_t K, size_t N, size_t depth, intmax_t *outCT);
 void inv_haar3D(int64_t Qstep, double *inV, double *inCT, size_t K, size_t N, size_t depth, double *outC);
 
-#endif // EXTRA_H
+#endif // HAAR3D_H
