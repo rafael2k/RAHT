@@ -279,6 +279,7 @@ void inv_haar3D(int64_t Qstep, double *inV, double *inCT, size_t K, size_t N, si
 #endif
     }
 
+    // memcpy?
     for(i=0; i<N; i++)
         for(size_t k=0; k<K; k++)
             C[i*K+k] = CT[i*K+k];
