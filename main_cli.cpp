@@ -14,6 +14,8 @@ size_t get_voxel_number_xyzrgb(char *filename);
 bool write_xyzrgb(char *filename, size_t voxel_number, double *V, double *C);
 bool read_xyzrgb(char *filename, size_t voxel_number, double *V, double *C);
 
+int scale = 5000;
+
 // raht_enc main()
 #ifdef RAHT_ENC
 int main(int argc, char *argv[]){
@@ -41,24 +43,35 @@ int main(int argc, char *argv[]){
 
     // TODO: write header
     // rlgr coder
-    file rlgr_out(argv[2], 0);
-    rlgr_out.rlgrWrite(data, voxel_number, 0);
+    file *rlgr_out = new file(argv[2], 1);
+    rlgr_out->rlgrWrite(data, voxel_number, 0); // should I multiply voxel_number by 3?
 
 
     // TEST
     // rlgr decoder
     file rlgr_in(argv[2], 0);
-    rlgr_in.rlgrRead(data, voxel_number, 0);
+    intmax_t *data_r = (intmax_t *) calloc(voxel_number, sizeof(intmax_t) * 3);
 
-    double *data_out = (double *) calloc(voxel_number, sizeof(double) * 3);
-    inv_haar3D(Qstep, inV, inC, K, voxel_number, depth, data_out); // lets understand this first
+    rlgr_in.rlgrRead(data_r, voxel_number * 3, 0);
 
-    // write_xyzrgb(char *filename, size_t voxel_number, double *V, double *C);
+    double *CT = (double *) calloc(voxel_number, sizeof(double) * 3);
+
+    for(size_t i = voxel_number; i > 0; i-- )
+        CT[i] = data_r[i];
+
+    double *data_out = (double *) calloc (voxel_number, sizeof(double) * 3);
+    inv_haar3D(Qstep, inV, CT, K, voxel_number, depth, data_out); // lets understand this first
+
+    write_xyzrgb("out.xyzrgb", voxel_number, inV, data_out);
 
     free(inV);
     free(inC);
     free(data);
 
+    // decoder
+    free(data_r);
+    free(CT);
+    free(data_out);
     return EXIT_SUCCESS;
 }
 
@@ -101,14 +114,20 @@ bool read_xyzrgb(char *filename, size_t voxel_number, double *inV, double *inC)
                 &x, &y, &z, &r, &g, &b) == 6) {
 
             // scale up?
-//            x *= 5000;
-//            y *= 5000;
-//            z *= 5000;
-//            printf("%f %f %f %f %f %f\n", x, y, z, r, g, b);
+            x *= scale;
+            y *= scale;
+            z *= scale;
 
             inV[counter] = x;
             inV[counter + voxel_number] = y;
             inV[counter + (voxel_number * 2)] = z;
+
+            // scale up color range too? (nope, it segfaults)
+//            r *= 255;
+//            g *= 255;
+//            b *= 255;
+
+            printf("%f %f %f %f %f %f\n", x, y, z, r, g, b);
 
             inC[counter] = r;
             inC[counter + voxel_number] = g;
@@ -135,7 +154,7 @@ bool write_xyzrgb(char *filename, size_t voxel_number, double *V, double *C)
     for (size_t i = 0; i < voxel_number; i++) {
 
         if (fprintf(file, "%.10f %.10f %.10f %.10f %.10f %.10f\n",
-                V[i], V[i+voxel_number], V[i + (voxel_number*2)],
+                V[i] / scale, V[i+voxel_number] / scale, V[i + (voxel_number*2)] / scale,
                 C[i], C[i+voxel_number], C[i + (voxel_number*2)]) < 0) {
             fprintf(stderr, "I/O error writing XYZRGB file.\n");
             fclose(file);
